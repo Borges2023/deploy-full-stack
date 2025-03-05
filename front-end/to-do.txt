@@ -1,0 +1,5 @@
+1 - Construir a API
+2 - Conexão com o Banco de Dados
+3 - Connectar o front-end com o back-end
+4 - Lógicas do Player
+5 - GithHub e Deploy
