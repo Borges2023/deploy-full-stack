@@ -4,12 +4,11 @@
 import { MongoClient } from "mongodb";
 
 const URI =
-  "mongodb+srv://willianb2012:Vidaloka2019@cluster0.fnq5v.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+  "mongodb+srv://fullstackjornada:qojI71xVU2aV8UKC@cluster0.v1qra.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
 const client = new MongoClient(URI);
 
-export const db = client.db("riffly");
-// Conexão abaixo serve para pegar as informaçções do banco de dados
+export const db = client.db("spotifyAula");
 // const songCollection = await db.collection("songs").find({}).toArray();
 
 // console.log(songCollection);

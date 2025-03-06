@@ -1,5 +1,5 @@
 {
-  "name": "gabarito-da-aula-4",
+  "name": "deploy",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Borges2023/deploy-full-stack.git"
+    "url": "git+https://github.com/fullstackjornada/deploy-jornada-full-stack.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Borges2023/deploy-full-stack/issues"
+    "url": "https://github.com/fullstackjornada/deploy-jornada-full-stack/issues"
   },
-  "homepage": "https://github.com/Borges2023/deploy-full-stack#readme",
+  "homepage": "https://github.com/fullstackjornada/deploy-jornada-full-stack#readme",
   "description": ""
 }

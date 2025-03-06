@@ -1,12 +1,10 @@
-import React, { use, useState } from "react";
+import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCirclePlay,
   faCirclePause,
   faBackwardStep,
   faForwardStep,
-  faFirstAid,
-  faShirt,
 } from "@fortawesome/free-solid-svg-icons";
 import { Link } from "react-router-dom";
 import { useRef, useEffect } from "react";
@@ -36,7 +34,6 @@ const Player = ({
   randomId2FromArtist,
   audio,
 }) => {
-  // Função do Player
   // const audioPlayer...
   const audioPlayer = useRef();
   const progressBar = useRef();
@@ -44,21 +41,23 @@ const Player = ({
   const [currentTime, setCurrentTime] = useState(formatTime(0));
   const durationInSeconds = timeInSeconds(duration);
 
-  //console.log(audioPlayer.current.Play());
-  //função
+  // console.log(durationInSeconds);
+
+  // função
+  // console.log(audioPlayer.current.play());
   const playPause = () => {
     isPlaying ? audioPlayer.current.pause() : audioPlayer.current.play();
 
     setIsPlaying(!isPlaying);
 
-    //setCurrentTime(formatTime(audioPlayer.current.currentTime));
+    // console.log(formatTime(audioPlayer.current.currentTime));
   };
+
   useEffect(() => {
     const intervalId = setInterval(() => {
       if (isPlaying)
         setCurrentTime(formatTime(audioPlayer.current.currentTime));
 
-      // abaixo comando para o progresso da barro minutos
       progressBar.current.style.setProperty(
         "--_progress",
         (audioPlayer.current.currentTime / durationInSeconds) * 100 + "%"
@@ -67,6 +66,8 @@ const Player = ({
 
     return () => clearInterval(intervalId);
   }, [isPlaying]);
+
+  // setIsPlaying(false)
 
   return (
     <div className="player">
@@ -85,14 +86,17 @@ const Player = ({
           <FontAwesomeIcon className="player__icon" icon={faForwardStep} />
         </Link>
       </div>
+
       <div className="player__progress">
         <p>{currentTime}</p>
 
         <div className="player__bar">
           <div ref={progressBar} className="player__bar-progress"></div>
         </div>
+
         <p>{duration}</p>
       </div>
+
       <audio ref={audioPlayer} src={audio}></audio>
     </div>
   );

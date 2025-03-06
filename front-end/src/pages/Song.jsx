@@ -51,13 +51,14 @@ const Song = () => {
             alt={`Imagem do Artista ${artist}`}
           />
         </Link>
-        {/* Abaixo função para passar a música para frente e anterior aleatório */}
+
         <Player
           duration={duration}
           randomIdFromArtist={randomIdFromArtist}
           randomId2FromArtist={randomId2FromArtist}
           audio={audio}
         />
+
         <div>
           <p className="song__name">{name}</p>
           <p>{artist}</p>
