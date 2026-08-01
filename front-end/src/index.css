@@ -55,6 +55,18 @@ img {
   min-height: 100svh;
 }
 
+.app__content {
+  flex: 1;
+}
+
+.site-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--green-800);
+  color: var(--green-200);
+  font-size: 12px;
+  text-align: center;
+}
+
 /* Header */
 
 .header {

@@ -14,14 +14,20 @@ const App = () => {
     <BrowserRouter>
       <Header />
 
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/artists" element={<Artists />} />
-        <Route path="/artist/:id" element={<Artist />} />
-        <Route path="/songs" element={<Songs />} />
-        <Route path="/song/:id" element={<Song />} />
-        <Route path="/admin/publicidade" element={<AdvertisingAdmin />} />
-      </Routes>
+      <main className="app__content">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/artists" element={<Artists />} />
+          <Route path="/artist/:id" element={<Artist />} />
+          <Route path="/songs" element={<Songs />} />
+          <Route path="/song/:id" element={<Song />} />
+          <Route path="/admin/publicidade" element={<AdvertisingAdmin />} />
+        </Routes>
+      </main>
+
+      <footer className="site-footer">
+        RifllyMusical@todosdireitos reservados
+      </footer>
     </BrowserRouter>
     </AdvertisingProvider>
   );
