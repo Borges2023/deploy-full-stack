@@ -1,24 +1,27 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import "./Ad.css";
 
-const Ad = ({ title, description, logo, link, onClose, countdownSeconds = 10 }) => {
+const Ad = ({ title, description, logo, link, onClose, onClick, countdownSeconds = 10 }) => {
   const [remainingSeconds, setRemainingSeconds] = useState(countdownSeconds);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      setRemainingSeconds((currentValue) => {
-        if (currentValue <= 1) {
-          clearInterval(intervalId);
-          onClose?.();
-          return 0;
-        }
-
-        return currentValue - 1;
-      });
+      setRemainingSeconds((currentValue) => Math.max(currentValue - 1, 0));
     }, 1000);
 
     return () => clearInterval(intervalId);
-  }, [onClose]);
+  }, []);
+
+  useEffect(() => {
+    if (remainingSeconds === 0) {
+      onCloseRef.current?.();
+    }
+  }, [remainingSeconds]);
 
   return (
     <div className="ad-overlay">
@@ -38,7 +41,7 @@ const Ad = ({ title, description, logo, link, onClose, countdownSeconds = 10 }) 
           </div>
 
           <div className="ad-footer">
-            <a href={link} target="_blank" rel="noopener noreferrer" className="ad-button">
+            <a href={link} target="_blank" rel="noopener noreferrer" className="ad-button" onClick={onClick}>
               Saiba Mais
             </a>
           </div>

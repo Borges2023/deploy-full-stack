@@ -1,4 +1,3 @@
-import React from "react";
 
 const App2 = () => {
   console.log("Olá, Mundo!");

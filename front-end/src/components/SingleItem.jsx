@@ -1,15 +1,15 @@
-import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCirclePlay } from "@fortawesome/free-solid-svg-icons";
 import { Link, useLocation } from "react-router-dom";
 
-const SingleItem = ({ _id, name, image, banner, artist, idPath }) => {
+const SingleItem = ({ _id, id, name, image, artist, idPath }) => {
   const location = useLocation();
-  const isGlobalList = location.pathname === "/songs";
+  const isGlobalList = ["/", "/songs"].includes(location.pathname);
+  const songId = _id ?? id;
 
   return (
     <Link
-      to={`${idPath}/${_id}`}
+      to={`${idPath}/${songId}`}
       state={{ fromGlobalList: isGlobalList }}
       className="single-item"
     >

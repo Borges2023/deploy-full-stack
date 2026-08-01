@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCirclePlay,
@@ -6,11 +6,28 @@ import {
   faBackwardStep,
   faForwardStep,
 } from "@fortawesome/free-solid-svg-icons";
-import { Link } from "react-router-dom";
-import { songsArray } from "../assets/database/songs";
-import { artistArray } from "../assets/database/artists";
-import { adsArray } from "../assets/database/ads";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Ad from "./Ad";
+import { useAdvertising } from "../advertising/AdvertisingContext";
+
+const FALLBACK_AUDIO_URL = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
+
+const isPlayableAudioUrl = (value) => {
+  if (typeof value !== "string") return false;
+
+  const trimmed = value.trim();
+  if (!/^https?:\/\//i.test(trimmed)) return false;
+
+  // Accept signed URLs and normal MP3 URLs.  A signed URL may use query
+  // parameters other than `token`, so checking for that exact parameter made
+  // otherwise valid tracks unavailable.
+  return /\.mp3(?:[?#]|$)/i.test(trimmed);
+};
+
+const resolveAudioUrl = (value) =>
+  isPlayableAudioUrl(value) ? value : FALLBACK_AUDIO_URL;
+
+const getSongId = (song) => song?._id ?? song?.id;
 
 const formatTime = (timeInSeconds) => {
   const minutes = Math.floor(timeInSeconds / 60)
@@ -37,6 +54,13 @@ const Player = ({
   currentId,
   audio,
 }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const fromGlobalList = Boolean(location.state?.fromGlobalList);
+  const navigationState = useMemo(
+    () => (fromGlobalList ? { fromGlobalList } : undefined),
+    [fromGlobalList]
+  );
   const audioPlayer = useRef(null);
   const progressBar = useRef(null);
   const volumeBar = useRef(null);
@@ -45,7 +69,6 @@ const Player = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(formatTime(0));
   const [volume, setVolume] = useState(0.7);
-  const [lastVolume, setLastVolume] = useState(0.7);
   const [durationInSeconds, setDurationInSeconds] = useState(
     timeInSeconds(duration)
   );
@@ -53,81 +76,95 @@ const Player = ({
   const [isAdjustingVolume, setIsAdjustingVolume] = useState(false);
   const [showAd, setShowAd] = useState(false);
   const [songChangeCount, setSongChangeCount] = useState(0);
+  const { getAd, loadPlacement, recordImpression, recordClick } = useAdvertising();
   const currentIndex = useMemo(
     () =>
       playlist.findIndex(
-        (item) => String(item._id || item.id) === String(currentId)
+        (item) => String(getSongId(item)) === String(currentId)
       ),
     [playlist, currentId]
   );
 
-  const currentSong = useMemo(
-    () =>
-      songsArray.find(
-        (item) => String(item._id || item.id) === String(currentId)
-      ),
-    [currentId]
-  );
-
-  const currentArtistIndex = useMemo(() => {
-    if (!currentSong) return -1;
-    return artistArray.findIndex(
-      (artist) => artist.name === currentSong.artist
-    );
-  }, [currentSong]);
-
-  const getFirstSongForArtist = (artistName) => {
-    const songs = songsArray.filter((item) => item.artist === artistName);
-    return songs.length > 0 ? songs[0] : null;
-  };
-
-  const getLastSongForArtist = (artistName) => {
-    const songs = songsArray.filter((item) => item.artist === artistName);
-    return songs.length > 0 ? songs[songs.length - 1] : null;
-  };
-
   // Função para obter anúncio rotativo baseado na posição da música
-  const getRotatingAd = useMemo(() => {
-    const songId = String(currentId);
-    const hashCode = songId.split('').reduce((acc, char) => {
-      return ((acc << 5) - acc) + char.charCodeAt(0);
-    }, 0);
-    const adIndex = Math.abs(hashCode) % adsArray.length;
-    return adsArray[adIndex];
-  }, [currentId]);
+  const currentAd = useMemo(() => getAd("song"), [getAd]);
+
+  useEffect(() => { loadPlacement("song"); }, [loadPlacement]);
+
+  const playAudioWithFallback = useCallback(async (audioEl = audioPlayer.current) => {
+    if (!audioEl) return false;
+
+    const resolvedAudio = resolveAudioUrl(audio);
+    if (audioEl.src !== resolvedAudio) {
+      audioEl.src = resolvedAudio;
+      audioEl.load();
+    }
+
+    try {
+      await audioEl.play();
+      setIsPlaying(true);
+      return true;
+    } catch (error) {
+      // A URL can fail because it expired, returned a network error, or has an
+      // unsupported MIME type. In all of those cases, keep the player usable.
+      if (audioEl.src !== FALLBACK_AUDIO_URL) {
+        audioEl.src = FALLBACK_AUDIO_URL;
+        audioEl.load();
+        try {
+          await audioEl.play();
+          setIsPlaying(true);
+          return true;
+        } catch (fallbackError) {
+          console.warn("Falha ao reproduzir áudio com fallback:", fallbackError);
+        }
+      }
+
+      setIsPlaying(false);
+      console.warn("Falha ao reproduzir áudio:", error);
+      return false;
+    }
+  }, [audio]);
+
+  useEffect(() => {
+    if (!audioPlayer.current) return;
+
+    const nextSrc = resolveAudioUrl(audio);
+    audioPlayer.current.src = nextSrc;
+    audioPlayer.current.load();
+  }, [audio, currentId]);
+
+  useEffect(() => {
+    const audioEl = audioPlayer.current;
+    if (!audioEl) return;
+
+    const handleError = async () => {
+      if (audioEl.src !== FALLBACK_AUDIO_URL) {
+        audioEl.src = FALLBACK_AUDIO_URL;
+        audioEl.load();
+        try {
+          await audioEl.play();
+          setIsPlaying(true);
+        } catch (error) {
+          setIsPlaying(false);
+          console.warn("Falha ao reproduzir o áudio de reserva:", error);
+        }
+      }
+    };
+
+    audioEl.addEventListener("error", handleError);
+    return () => audioEl.removeEventListener("error", handleError);
+  }, [audio, currentId]);
 
   const prevSongId = useMemo(() => {
-    if (playlist.length === 0) return null;
-    if (currentIndex > 0) {
-      return playlist[currentIndex - 1]._id || playlist[currentIndex - 1].id;
-    }
-
-    if (currentArtistIndex < 0) return null;
-
-    const previousArtistIndex =
-      (currentArtistIndex - 1 + artistArray.length) % artistArray.length;
-    const previousArtist = artistArray[previousArtistIndex];
-    const lastSong = getLastSongForArtist(previousArtist.name);
-
-    return lastSong ? lastSong._id || lastSong.id : null;
-  }, [playlist, currentIndex, currentArtistIndex]);
+    if (playlist.length === 0 || currentIndex <= 0) return null;
+    return getSongId(playlist[currentIndex - 1]);
+  }, [playlist, currentIndex]);
 
   const nextSongId = useMemo(() => {
-    if (playlist.length === 0) return null;
-    if (currentIndex < playlist.length - 1) {
-      return playlist[currentIndex + 1]._id || playlist[currentIndex + 1].id;
-    }
+    if (playlist.length === 0 || currentIndex < 0 || currentIndex >= playlist.length - 1) return null;
+    return getSongId(playlist[currentIndex + 1]);
+  }, [playlist, currentIndex]);
 
-    if (currentArtistIndex < 0) return null;
-
-    const nextArtistIndex = (currentArtistIndex + 1) % artistArray.length;
-    const nextArtist = artistArray[nextArtistIndex];
-    const firstSong = getFirstSongForArtist(nextArtist.name);
-
-    return firstSong ? firstSong._id || firstSong.id : null;
-  }, [playlist, currentIndex, currentArtistIndex]);
-
-  const updateProgress = (time) => {
+  const updateProgress = useCallback((time) => {
     if (!audioPlayer.current || !progressBar.current) return;
 
     const safeTime = Math.max(0, Math.min(time, durationInSeconds));
@@ -135,7 +172,7 @@ const Player = ({
     setCurrentTime(formatTime(safeTime));
     const percent = durationInSeconds > 0 ? (safeTime / durationInSeconds) * 100 : 0;
     progressBar.current.style.setProperty("--_progress", percent + "%");
-  };
+  }, [durationInSeconds]);
 
   const updateVolume = (percentage) => {
     const safeVolume = Math.max(0, Math.min(1, percentage));
@@ -150,6 +187,18 @@ const Player = ({
       volumeBar.current.style.setProperty("--_volume", `${safeVolume * 100}%`);
     }
   };
+
+  const showAdOverlay = useCallback(() => {
+    shouldResumeAfterAdRef.current = true;
+
+    if (audioPlayer.current) {
+      audioPlayer.current.pause();
+      setIsPlaying(false);
+    }
+
+    setShowAd(true);
+    recordImpression(currentAd.id);
+  }, [currentAd.id, recordImpression]);
 
   useEffect(() => {
     const audioEl = audioPlayer.current;
@@ -170,9 +219,8 @@ const Player = ({
       if (!Number.isNaN(actualDuration) && actualDuration > 0) {
         setDurationInSeconds(actualDuration);
       }
-      // Auto-play when metadata is loaded and song changed
       if (isPlaying && audioEl.paused) {
-        audioEl.play().catch(() => {
+        playAudioWithFallback(audioEl).catch(() => {
           // Autoplay might be blocked
         });
       }
@@ -180,7 +228,12 @@ const Player = ({
 
     const handleEnded = () => {
       setIsPlaying(false);
-      // Increment song change counter and show ad every 2 songs
+
+      if (nextSongId) {
+        navigate(`/song/${nextSongId}`, { state: navigationState });
+        return;
+      }
+
       setSongChangeCount((prev) => {
         const newCount = prev + 1;
         if (newCount % 2 === 0) {
@@ -199,7 +252,7 @@ const Player = ({
       audioEl.removeEventListener("loadedmetadata", handleLoadedMetadata);
       audioEl.removeEventListener("ended", handleEnded);
     };
-  }, [durationInSeconds]);
+  }, [durationInSeconds, isPlaying, nextSongId, navigationState, navigate, playAudioWithFallback, showAdOverlay]);
 
   useEffect(() => {
     const handlePointerMove = (event) => {
@@ -230,7 +283,7 @@ const Player = ({
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
     };
-  }, [isSeeking, durationInSeconds]);
+  }, [isSeeking, durationInSeconds, updateProgress]);
 
   const handleBarPointerDown = (event) => {
     const bar = event.currentTarget;
@@ -248,10 +301,10 @@ const Player = ({
     if (!audioPlayer.current) return;
     if (isPlaying) {
       audioPlayer.current.pause();
-    } else {
-      audioPlayer.current.play();
+      setIsPlaying(false);
+      return;
     }
-    setIsPlaying((current) => !current);
+    playAudioWithFallback();
   };
 
   const handleCloseAd = () => {
@@ -265,32 +318,18 @@ const Player = ({
     shouldResumeAfterAdRef.current = false;
 
     const resumePlayback = () => {
-      audioPlayer.current?.play().catch(() => {
+      playAudioWithFallback().catch(() => {
         // Autoplay might be blocked by browser, that's fine
       });
-      setIsPlaying(true);
     };
 
     const resumeTimeout = setTimeout(resumePlayback, 150);
     return () => clearTimeout(resumeTimeout);
   };
 
-  const showAdOverlay = () => {
-    shouldResumeAfterAdRef.current = true;
-
-    if (audioPlayer.current) {
-      audioPlayer.current.pause();
-      setIsPlaying(false);
-    }
-
-    setShowAd(true);
-  };
-
-  // Auto-play when song changes via navigation
   useEffect(() => {
     if (previousIdRef.current !== currentId && audioPlayer.current) {
       previousIdRef.current = currentId;
-      // Reset the song
       audioPlayer.current.currentTime = 0;
       setCurrentTime(formatTime(0));
 
@@ -303,15 +342,14 @@ const Player = ({
       }
 
       const playTimeout = setTimeout(() => {
-        audioPlayer.current?.play().catch(() => {
+        playAudioWithFallback().catch(() => {
           // Autoplay might be blocked by browser, that's fine
         });
-        setIsPlaying(true);
       }, 100);
 
       return () => clearTimeout(playTimeout);
     }
-  }, [currentId, songChangeCount]);
+  }, [currentId, songChangeCount, playAudioWithFallback, showAdOverlay]);
 
   const handleVolumePointerDown = (event) => {
     const bar = event.currentTarget;
@@ -362,6 +400,7 @@ const Player = ({
         {prevSongId ? (
           <Link
             to={`/song/${prevSongId}`}
+            state={navigationState}
             className="player__icon player__icon--nav"
           >
             <FontAwesomeIcon icon={faBackwardStep} />
@@ -383,6 +422,7 @@ const Player = ({
         {nextSongId ? (
           <Link
             to={`/song/${nextSongId}`}
+            state={navigationState}
             className="player__icon player__icon--nav"
           >
             <FontAwesomeIcon icon={faForwardStep} />
@@ -424,14 +464,15 @@ const Player = ({
         </div>
       </div>
 
-      <audio ref={audioPlayer} src={audio}></audio>
+      <audio ref={audioPlayer} src={resolveAudioUrl(audio)}></audio>
 
       {showAd && (
         <Ad
-          title={getRotatingAd.title}
-          description={getRotatingAd.description}
-          logo={getRotatingAd.logo}
-          link={getRotatingAd.link}
+          title={currentAd.title}
+          description={currentAd.description}
+          logo={currentAd.imageUrl || currentAd.logo}
+          link={currentAd.link}
+          onClick={() => recordClick(currentAd.id)}
           onClose={handleCloseAd}
           countdownSeconds={10}
         />
