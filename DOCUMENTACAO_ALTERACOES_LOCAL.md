@@ -252,3 +252,5 @@ Show 6 more files
 autenticação do mongodb:  user: tpowerinformatica2016_db_user
 senha:  86BvnQ4a8wR6dUW2
 uri: mongodb+srv://tpowerinformatica2016_db_user:86BvnQ4a8wR6dUW2@cluster0.4urkt5t.mongodb.net/?appName=Cluster0
+
+mongodb+srv://fullstackjornada:qojI71xVU2aV8UKC@cluster0.v1qra.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
