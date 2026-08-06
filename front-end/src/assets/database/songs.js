@@ -1,6 +1,6 @@
 export const songsArray = [
   {
-    image: "https://qfkutywthqgairxigypy.supabase.co/storage/v1/object/sign/music/sertaneja%20raiz/sofrencia/bebida%20musica%20e%20saudade.jpeg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8wZjVlYTdkOS04ZTFkLTRlMjQtOGI2YS1hYmE5N2JlODc1MmEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJtdXNpYy9zZXJ0YW5lamEgcmFpei9zb2ZyZW5jaWEvYmViaWRhIG11c2ljYSBlIHNhdWRhZGUuanBlZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3ODYwMzM4NjAsImV4cCI6NTg1NTA4MzM4NjB9.W701yv-OFDqs2Cd1vVh5_aKno-I5e-60NBGVv3VY1qQ",
+    image: "https://qfkutywthqgairxigypy.supabase.co/storage/v1/object/sign/music/sertaneja%20raiz/sofrencia/bebida%20musica%20e%20saudade.jpeg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8wZjVlYTdkOS04ZTFkLTRlMjQtOGI2YS1hYmE5N2JlODc1MmEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJtdXNpYy9zZXJ0YW5lamEgcmFpei9zb2ZyZW5jaWEvYmViaWRhIG11c2ljYSBlIHNhdWRhZGUuanBlZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3ODYwNDE3NTUsImV4cCI6NTg1NTA4NDE3NTV9.2EbIiYgvl12MCJgcwMyRIOFhPd0J5D79Vm_9CILwu2M",
     name: "Sertaneja Raiz -Bebida, Música e Saudade",
     duration: "03:58",
     artist: "WBB",
