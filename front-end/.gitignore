@@ -1,4 +1,4 @@
 node_modules
 .env
-DOCUMENTACAO_ALTERACOES_LOCAL.md
+.DOCUMENTACAO_ALTERACOES_LOCAL
 .env.example
